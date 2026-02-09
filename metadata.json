@@ -1,0 +1,5 @@
+{
+  "name": "Generador de carrouseles Ashe",
+  "description": "An iterative image generation tool using Gemini 3 Pro. Define a base scene and progressively modify it with sequential prompts to build complex compositions.",
+  "requestFramePermissions": []
+}
