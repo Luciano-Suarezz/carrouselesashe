@@ -13,6 +13,16 @@ export const Login: React.FC<LoginProps> = ({ onLogin }) => {
   const [username, setUsername] = useState('');
   const [apiKey, setApiKey] = useState('');
   
+  // Determine if config is missing from environment
+  const isConfigMissing = !CONFIG.AIRTABLE.API_KEY || !CONFIG.AIRTABLE.BASE_ID || !CONFIG.CLOUDINARY.CLOUD_NAME;
+
+  // Dynamic Config State (only used if missing)
+  const [atApiKey, setAtApiKey] = useState('');
+  const [atBaseId, setAtBaseId] = useState('');
+  const [clCloudName, setClCloudName] = useState('');
+  const [clUploadPreset, setClUploadPreset] = useState('');
+  
+  const [showConfig, setShowConfig] = useState(isConfigMissing);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -26,9 +36,15 @@ export const Login: React.FC<LoginProps> = ({ onLogin }) => {
     e.preventDefault();
     if (!username || !apiKey) return;
 
-    // Check if config is set up
-    if (!CONFIG.AIRTABLE.API_KEY || !CONFIG.AIRTABLE.BASE_ID || !CONFIG.CLOUDINARY.CLOUD_NAME) {
-        setError("Missing System Configuration. Please fill in your keys in the 'config.ts' file.");
+    // Use environment config if available, otherwise use manual inputs
+    const finalAtApiKey = CONFIG.AIRTABLE.API_KEY || atApiKey;
+    const finalAtBaseId = CONFIG.AIRTABLE.BASE_ID || atBaseId;
+    const finalClCloudName = CONFIG.CLOUDINARY.CLOUD_NAME || clCloudName;
+    const finalClUploadPreset = CONFIG.CLOUDINARY.UPLOAD_PRESET || clUploadPreset;
+
+    if (!finalAtApiKey || !finalAtBaseId || !finalClCloudName || !finalClUploadPreset) {
+        setError("Missing System Configuration. Please fill in all Airtable and Cloudinary keys.");
+        setShowConfig(true);
         return;
     }
 
@@ -44,8 +60,8 @@ export const Login: React.FC<LoginProps> = ({ onLogin }) => {
 
         // 2. Proceed with Airtable Login if Gemini key is valid
         await onLogin(
-            { apiKey: CONFIG.AIRTABLE.API_KEY, baseId: CONFIG.AIRTABLE.BASE_ID },
-            { cloudName: CONFIG.CLOUDINARY.CLOUD_NAME, uploadPreset: CONFIG.CLOUDINARY.UPLOAD_PRESET },
+            { apiKey: finalAtApiKey, baseId: finalAtBaseId },
+            { cloudName: finalClCloudName, uploadPreset: finalClUploadPreset },
             username,
             apiKey
         );
@@ -59,7 +75,7 @@ export const Login: React.FC<LoginProps> = ({ onLogin }) => {
 
   return (
     <div className="min-h-screen bg-gray-950 flex flex-col items-center justify-center p-4">
-        <div className="w-full max-w-md bg-gray-900 border border-gray-800 rounded-2xl p-8 shadow-2xl">
+        <div className="w-full max-w-md bg-gray-900 border border-gray-800 rounded-2xl p-8 shadow-2xl overflow-y-auto max-h-[90vh] custom-scrollbar">
             <div className="flex items-center gap-3 mb-8 justify-center">
                 <div className="p-3 bg-gradient-to-br from-primary-600 to-purple-600 rounded-xl shadow-lg shadow-primary-500/20">
                     <Database className="w-8 h-8 text-white" />
@@ -100,9 +116,71 @@ export const Login: React.FC<LoginProps> = ({ onLogin }) => {
                     </p>
                 </div>
 
+                {/* Advanced / Missing Config Section */}
+                {isConfigMissing && (
+                    <div className="pt-4 border-t border-gray-800">
+                        <button 
+                            type="button"
+                            onClick={() => setShowConfig(!showConfig)}
+                            className="flex items-center gap-2 text-xs text-gray-500 hover:text-gray-300 transition-colors mb-4 w-full justify-center"
+                        >
+                            <Settings className="w-3 h-3" />
+                            {showConfig ? 'Hide Configuration' : 'Manual Configuration'}
+                        </button>
+
+                        {showConfig && (
+                            <div className="space-y-4 animate-in fade-in slide-in-from-top-2 duration-300">
+                                <div className="grid grid-cols-1 gap-4">
+                                    <div className="space-y-1">
+                                        <label className="text-[10px] font-bold text-gray-500 uppercase">Airtable API Key</label>
+                                        <input 
+                                            type="password" 
+                                            value={atApiKey}
+                                            onChange={e => setAtApiKey(e.target.value)}
+                                            placeholder="pat..."
+                                            className="w-full bg-gray-950 border border-gray-800 rounded px-3 py-2 text-xs text-white focus:border-primary-500 outline-none"
+                                        />
+                                    </div>
+                                    <div className="space-y-1">
+                                        <label className="text-[10px] font-bold text-gray-500 uppercase">Airtable Base ID</label>
+                                        <input 
+                                            type="text" 
+                                            value={atBaseId}
+                                            onChange={e => setAtBaseId(e.target.value)}
+                                            placeholder="app..."
+                                            className="w-full bg-gray-950 border border-gray-800 rounded px-3 py-2 text-xs text-white focus:border-primary-500 outline-none"
+                                        />
+                                    </div>
+                                    <div className="space-y-1">
+                                        <label className="text-[10px] font-bold text-gray-500 uppercase">Cloudinary Cloud Name</label>
+                                        <input 
+                                            type="text" 
+                                            value={clCloudName}
+                                            onChange={e => setClCloudName(e.target.value)}
+                                            className="w-full bg-gray-950 border border-gray-800 rounded px-3 py-2 text-xs text-white focus:border-primary-500 outline-none"
+                                        />
+                                    </div>
+                                    <div className="space-y-1">
+                                        <label className="text-[10px] font-bold text-gray-500 uppercase">Cloudinary Upload Preset</label>
+                                        <input 
+                                            type="text" 
+                                            value={clUploadPreset}
+                                            onChange={e => setClUploadPreset(e.target.value)}
+                                            className="w-full bg-gray-950 border border-gray-800 rounded px-3 py-2 text-xs text-white focus:border-primary-500 outline-none"
+                                        />
+                                    </div>
+                                </div>
+                                <p className="text-[10px] text-yellow-600/80 italic text-center">
+                                    Configuration keys are required if not set in environment
+                                </p>
+                            </div>
+                        )}
+                    </div>
+                )}
+
                 {error && (
                     <div className="p-3 bg-red-900/20 border border-red-900/50 rounded-lg flex items-start gap-2 text-red-400 text-xs break-all">
-                        {error.includes('config.ts') ? <Settings className="w-4 h-4 shrink-0 mt-0.5" /> : <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />}
+                        {error.includes('config.ts') || error.includes('Configuration') ? <Settings className="w-4 h-4 shrink-0 mt-0.5" /> : <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />}
                         <span>{error}</span>
                     </div>
                 )}
@@ -117,7 +195,7 @@ export const Login: React.FC<LoginProps> = ({ onLogin }) => {
             </form>
             
             <p className="text-center text-[10px] text-gray-600 mt-6">
-                Keys loaded securely from config.ts
+                {isConfigMissing ? 'Manual Configuration Mode' : 'System Configuration is securely loaded'}
             </p>
         </div>
     </div>

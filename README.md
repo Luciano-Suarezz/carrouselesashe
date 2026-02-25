@@ -1,20 +1,77 @@
-<div align="center">
-<img width="1200" height="475" alt="GHBanner" src="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" />
-</div>
+# S.I.A. Cloud Hub - Generador de Carruseles
 
-# Run and deploy your AI Studio app
+Esta aplicación es una herramienta web construida con React, Vite y Tailwind CSS para generar carruseles de imágenes utilizando la API de Gemini.
 
-This contains everything you need to run your app locally.
+## Requisitos Previos
 
-View your app in AI Studio: https://ai.studio/apps/drive/1jgZ0cK5tP6msBHgpMCf9qSNyOu7WmwUO
+Asegúrate de tener instalado **Node.js** (versión 18 o superior) en tu computadora. Puedes descargarlo desde [nodejs.org](https://nodejs.org/).
 
-## Run Locally
+## Instalación
 
-**Prerequisites:**  Node.js
+1.  Descarga el código fuente.
+2.  Abre una terminal en la carpeta del proyecto.
+3.  Instala las dependencias ejecutando:
 
+    ```bash
+    npm install
+    ```
 
-1. Install dependencies:
-   `npm install`
-2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
-3. Run the app:
-   `npm run dev`
+## Configuración
+
+Para que la aplicación funcione correctamente, necesitas configurar tus claves de API.
+
+### 1. Configuración de Airtable y Cloudinary
+
+Tienes dos opciones:
+
+**Opción A (Recomendada para desarrollo local):**
+1.  Copia el archivo `config.example.ts` y renómbralo a `config.ts`.
+2.  Abre `config.ts` y rellena tus claves:
+
+    ```typescript
+    export const CONFIG = {
+      AIRTABLE: {
+        API_KEY: 'tu_token_pat_...',
+        BASE_ID: 'tu_base_id_app...',
+      },
+      CLOUDINARY: {
+        CLOUD_NAME: 'tu_cloud_name',
+        UPLOAD_PRESET: 'tu_upload_preset',
+      }
+    };
+    ```
+
+**Opción B (Ingreso Manual):**
+Si no configuras el archivo `config.ts`, la aplicación te pedirá estas claves en la pantalla de inicio de sesión cada vez que entres.
+
+### 2. Clave de API de Gemini
+
+La aplicación te pedirá tu **Gemini API Key** en la pantalla de inicio de sesión. Esta clave se guarda solo en la memoria de la sesión y no se persiste por seguridad.
+
+Si deseas configurarla como variable de entorno localmente (opcional):
+1.  Crea un archivo `.env` en la raíz del proyecto.
+2.  Añade la siguiente línea:
+    ```env
+    VITE_GEMINI_API_KEY=tu_clave_api_aqui
+    ```
+3.  Nota: Tendrás que modificar ligeramente el código para leer esta variable si deseas que se cargue automáticamente, ya que la configuración actual prioriza la entrada manual por seguridad.
+
+## Ejecutar la Aplicación
+
+Para iniciar el servidor de desarrollo local:
+
+```bash
+npm run dev
+```
+
+Esto abrirá la aplicación en tu navegador, generalmente en `http://localhost:3000` o `http://localhost:5173`.
+
+## Construir para Producción
+
+Si deseas generar los archivos estáticos para subir a un hosting:
+
+```bash
+npm run build
+```
+
+Los archivos generados estarán en la carpeta `dist`.
