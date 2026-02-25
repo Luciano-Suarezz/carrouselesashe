@@ -2,7 +2,6 @@
 import React, { useState, useEffect } from 'react';
 import { AirtableConfig, CloudinaryConfig } from '../types';
 import { validateGeminiKey } from '../services/geminiService';
-import { CONFIG } from '../config';
 import { Database, User, ArrowRight, Loader2, AlertCircle, Key, Settings } from 'lucide-react';
 
 interface LoginProps {
@@ -14,7 +13,12 @@ export const Login: React.FC<LoginProps> = ({ onLogin }) => {
   const [apiKey, setApiKey] = useState('');
   
   // Determine if config is missing from environment
-  const isConfigMissing = !CONFIG.AIRTABLE.API_KEY || !CONFIG.AIRTABLE.BASE_ID || !CONFIG.CLOUDINARY.CLOUD_NAME;
+  const envAirtableKey = import.meta.env.VITE_AIRTABLE_API_KEY || '';
+  const envAirtableBaseId = import.meta.env.VITE_AIRTABLE_BASE_ID || '';
+  const envCloudinaryName = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME || '';
+  const envCloudinaryPreset = import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET || '';
+
+  const isConfigMissing = !envAirtableKey || !envAirtableBaseId || !envCloudinaryName;
 
   // Dynamic Config State (only used if missing)
   const [atApiKey, setAtApiKey] = useState('');
@@ -37,10 +41,10 @@ export const Login: React.FC<LoginProps> = ({ onLogin }) => {
     if (!username || !apiKey) return;
 
     // Use environment config if available, otherwise use manual inputs
-    const finalAtApiKey = CONFIG.AIRTABLE.API_KEY || atApiKey;
-    const finalAtBaseId = CONFIG.AIRTABLE.BASE_ID || atBaseId;
-    const finalClCloudName = CONFIG.CLOUDINARY.CLOUD_NAME || clCloudName;
-    const finalClUploadPreset = CONFIG.CLOUDINARY.UPLOAD_PRESET || clUploadPreset;
+    const finalAtApiKey = envAirtableKey || atApiKey;
+    const finalAtBaseId = envAirtableBaseId || atBaseId;
+    const finalClCloudName = envCloudinaryName || clCloudName;
+    const finalClUploadPreset = envCloudinaryPreset || clUploadPreset;
 
     if (!finalAtApiKey || !finalAtBaseId || !finalClCloudName || !finalClUploadPreset) {
         setError("Missing System Configuration. Please fill in all Airtable and Cloudinary keys.");
