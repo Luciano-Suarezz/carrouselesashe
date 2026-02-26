@@ -1,16 +1,18 @@
 
 import React, { useRef, useState } from 'react';
-import { ImageSize, AspectRatio, GenerationMode } from '../types';
-import { Settings as SettingsIcon, Monitor, Maximize, Layers, Route, User, Upload, X, Save, Check, Loader2, Sparkles } from 'lucide-react';
+import { ImageSize, AspectRatio, GenerationMode, ImageModel } from '../types';
+import { Settings as SettingsIcon, Monitor, Maximize, Layers, Route, User, Upload, X, Save, Check, Loader2, Sparkles, Cpu } from 'lucide-react';
 
 interface SettingsProps {
   imageSize: ImageSize;
   aspectRatio: AspectRatio;
   generationMode: GenerationMode;
+  imageModel: ImageModel;
   subjectImage: string | null;
   onSizeChange: (size: ImageSize) => void;
   onAspectRatioChange: (ratio: AspectRatio) => void;
   onModeChange: (mode: GenerationMode) => void;
+  onModelChange: (model: ImageModel) => void;
   onSubjectImageChange: (base64: string | null) => void;
   onSaveSubjectToProfile?: (base64: string) => Promise<void>;
   disabled: boolean;
@@ -20,10 +22,12 @@ export const Settings: React.FC<SettingsProps> = ({
   imageSize,
   aspectRatio,
   generationMode,
+  imageModel,
   subjectImage,
   onSizeChange,
   onAspectRatioChange,
   onModeChange,
+  onModelChange,
   onSubjectImageChange,
   onSaveSubjectToProfile,
   disabled
@@ -120,6 +124,20 @@ export const Settings: React.FC<SettingsProps> = ({
                 </select>
             </div>
          </div>
+      </div>
+
+      {/* Model Selection Row */}
+      <div className="flex items-center bg-gray-900 border border-gray-800 rounded px-2 py-1.5">
+          <Cpu className="w-3 h-3 text-gray-500 mr-2" />
+          <select 
+              value={imageModel}
+              onChange={(e) => onModelChange(e.target.value as ImageModel)}
+              disabled={disabled}
+              className="bg-transparent border-none text-gray-300 focus:ring-0 py-0 pl-0 pr-4 text-[10px] font-bold cursor-pointer flex-1"
+          >
+              <option value="gemini-3.1-flash-image-preview">Nano Banana 2 (Flash)</option>
+              <option value="gemini-3-pro-image-preview">Nano Banana Pro (High Quality)</option>
+          </select>
       </div>
 
       {/* Subject Reference - Compact Row */}

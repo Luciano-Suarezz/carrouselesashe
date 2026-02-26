@@ -7,7 +7,7 @@ import { GalleryList } from './components/GalleryList';
 import { GalleryDetail } from './components/GalleryDetail';
 import { Login } from './components/Login';
 import { generateImage, setGeminiApiKey } from './services/geminiService';
-import { GenerationStep, ImageSize, AspectRatio, GenerationMode, SavedProject, AirtableConfig, UserProfile, CloudinaryConfig } from './types';
+import { GenerationStep, ImageSize, AspectRatio, GenerationMode, ImageModel, SavedProject, AirtableConfig, UserProfile, CloudinaryConfig } from './types';
 import { loginOrRegisterUser, getUserProjects, saveProjectToAirtable, deleteProjectFromAirtable, updateUserSubject } from './services/airtableService';
 import { uploadImageToCloudinary } from './services/cloudinaryService';
 import { createZipFromSteps, downloadBlob } from './utils/zipUtils';
@@ -39,6 +39,7 @@ const App: React.FC = () => {
   const [imageSize, setImageSize] = useState<ImageSize>('1K');
   const [aspectRatio, setAspectRatio] = useState<AspectRatio>('1:1');
   const [generationMode, setGenerationMode] = useState<GenerationMode>('carousel');
+  const [imageModel, setImageModel] = useState<ImageModel>('gemini-3.1-flash-image-preview');
   const [subjectImage, setSubjectImage] = useState<string | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
   const [isSaving, setIsSaving] = useState(false); 
@@ -142,6 +143,7 @@ const App: React.FC = () => {
             imageSize,
             aspectRatio,
             generationMode,
+            imageModel,
             subjectImageBase64: null 
         };
 
@@ -253,6 +255,7 @@ const App: React.FC = () => {
             prompt: step.prompt,
             imageSize,
             aspectRatio,
+            model: imageModel,
             previousImageBase64,
             subjectImageBase64: step.useSubject ? subjectImage : null
         });
@@ -284,6 +287,7 @@ const App: React.FC = () => {
                   prompt: baseStep.prompt,
                   imageSize,
                   aspectRatio,
+                  model: imageModel,
                   subjectImageBase64: baseStep.useSubject ? subjectImage : null 
               });
               setSteps((prev) => prev.map((s, idx) => idx === 0 ? { ...s, status: 'completed', imageUrl: baseImageBase64 } : s));
@@ -310,6 +314,7 @@ const App: React.FC = () => {
                           prompt: step.prompt,
                           imageSize,
                           aspectRatio,
+                          model: imageModel,
                           previousImageBase64: baseImageBase64,
                           subjectImageBase64: step.useSubject ? subjectImage : null
                       });
@@ -332,6 +337,7 @@ const App: React.FC = () => {
                 prompt: steps[i].prompt,
                 imageSize,
                 aspectRatio,
+                model: imageModel,
                 previousImageBase64: inputImage,
                 subjectImageBase64: steps[i].useSubject ? subjectImage : null
               });
@@ -354,6 +360,7 @@ const App: React.FC = () => {
       setImageSize(project.imageSize);
       setAspectRatio(project.aspectRatio);
       setGenerationMode(project.generationMode);
+      if (project.imageModel) setImageModel(project.imageModel);
       setSelectedProjectId(project.id);
       setActiveTab('generation');
   };
@@ -370,7 +377,7 @@ const App: React.FC = () => {
             <Zap className="w-4 h-4 text-white fill-current" />
           </div>
           <div className="flex flex-col">
-            <h1 className="font-bold text-lg tracking-tight italic leading-none text-white">S.I.A. <span className="text-gray-500 not-italic font-medium text-xs ml-0.5">Cloud</span></h1>
+            <h1 className="font-bold text-lg tracking-tight italic leading-none text-white">Carru <span className="text-gray-500 not-italic font-medium text-xs ml-0.5">Cloud</span></h1>
           </div>
         </div>
 
@@ -431,10 +438,12 @@ const App: React.FC = () => {
                             imageSize={imageSize} 
                             aspectRatio={aspectRatio} 
                             generationMode={generationMode} 
+                            imageModel={imageModel}
                             subjectImage={subjectImage} 
                             onSizeChange={setImageSize} 
                             onAspectRatioChange={setAspectRatio} 
                             onModeChange={setGenerationMode} 
+                            onModelChange={setImageModel}
                             onSubjectImageChange={setSubjectImage} 
                             onSaveSubjectToProfile={handleSaveSubjectToProfile}
                             disabled={isGenerating || isSaving} 

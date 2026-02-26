@@ -2,6 +2,7 @@
 export type ImageSize = '1K' | '2K' | '4K';
 export type AspectRatio = '1:1' | '16:9' | '9:16' | '4:3' | '3:4' | '4:5';
 export type GenerationMode = 'sequential' | 'carousel';
+export type ImageModel = 'gemini-3.1-flash-image-preview' | 'gemini-3-pro-image-preview';
 
 export interface GenerationStep {
   id: string;
@@ -21,6 +22,7 @@ export interface SavedProject {
   imageSize: ImageSize;
   aspectRatio: AspectRatio;
   generationMode: GenerationMode;
+  imageModel?: ImageModel;
   subjectImageBase64?: string | null;
 }
 
@@ -29,6 +31,7 @@ export interface AppState {
   imageSize: ImageSize;
   aspectRatio: AspectRatio;
   generationMode: GenerationMode;
+  imageModel: ImageModel;
   isGenerating: boolean;
   currentStepIndex: number;
 }

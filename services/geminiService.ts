@@ -1,8 +1,7 @@
 
 import { GoogleGenAI, Type } from "@google/genai";
-import { ImageSize, AspectRatio } from "../types";
+import { ImageSize, AspectRatio, ImageModel } from "../types";
 
-const IMAGE_MODEL_NAME = 'gemini-3-pro-image-preview';
 const TEXT_MODEL_NAME = 'gemini-3-flash-preview';
 
 // Store the API key provided by the user in the login screen
@@ -40,6 +39,7 @@ interface GenerateImageOptions {
   prompt: string;
   imageSize: ImageSize;
   aspectRatio: AspectRatio;
+  model: ImageModel;
   previousImageBase64?: string; 
   subjectImageBase64?: string | null; 
 }
@@ -66,6 +66,7 @@ export const generateImage = async ({
   prompt,
   imageSize,
   aspectRatio,
+  model,
   previousImageBase64,
   subjectImageBase64
 }: GenerateImageOptions): Promise<string> => {
@@ -115,7 +116,7 @@ export const generateImage = async ({
     parts.push({ text: finalPrompt });
 
     const response = await ai.models.generateContent({
-      model: IMAGE_MODEL_NAME,
+      model: model,
       contents: { parts: parts },
       config: {
         imageConfig: {

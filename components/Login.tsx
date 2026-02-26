@@ -85,7 +85,7 @@ export const Login: React.FC<LoginProps> = ({ onLogin }) => {
                     <Database className="w-8 h-8 text-white" />
                 </div>
                 <div>
-                    <h1 className="text-2xl font-black text-white italic tracking-tighter">S.I.A. <span className="not-italic text-gray-500 text-lg font-medium">Cloud Hub</span></h1>
+                    <h1 className="text-2xl font-black text-white italic tracking-tighter">Carru <span className="not-italic text-gray-500 text-lg font-medium">Cloud Hub</span></h1>
                 </div>
             </div>
 
