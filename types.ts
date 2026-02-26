@@ -36,11 +36,18 @@ export interface AppState {
   currentStepIndex: number;
 }
 
+export interface SavedSystemPrompt {
+  id: string;
+  name: string;
+  prompt: string;
+}
+
 export interface UserProfile {
   username: string;
   recordId?: string; // Airtable Record ID
   subjectImageBase64?: string | null; // This might be a URL now if using Cloudinary
   systemPrompt?: string;
+  savedSystemPrompts?: SavedSystemPrompt[];
 }
 
 export interface AirtableConfig {

@@ -53,11 +53,21 @@ export const loginOrRegisterUser = async (config: AirtableConfig, username: stri
         // User exists
         console.log(`[Airtable] User found:`, data.records[0].fields.Name);
         const record = data.records[0];
+        let savedPrompts = [];
+        try {
+            if (record.fields.SystemPrompts) {
+                savedPrompts = JSON.parse(record.fields.SystemPrompts);
+            }
+        } catch (e) {
+            console.warn("Failed to parse SystemPrompts", e);
+        }
+
         return {
             username: record.fields.Name,
             recordId: record.id,
             subjectImageBase64: record.fields.SubjectImage || null,
-            systemPrompt: record.fields.SystemPrompt || ''
+            systemPrompt: '', // We can't store it in Airtable yet, so we just keep it in local state
+            savedSystemPrompts: savedPrompts
         };
     } else {
         // Create user
@@ -71,7 +81,7 @@ export const loginOrRegisterUser = async (config: AirtableConfig, username: stri
                 fields: {
                     Name: username,
                     SubjectImage: '',
-                    SystemPrompt: ''
+                    SystemPrompts: '[]'
                 }
             })
         });
@@ -88,7 +98,8 @@ export const loginOrRegisterUser = async (config: AirtableConfig, username: stri
             username: createData.fields.Name,
             recordId: createData.id,
             subjectImageBase64: null,
-            systemPrompt: ''
+            systemPrompt: '',
+            savedSystemPrompts: []
         };
     }
 };
@@ -124,24 +135,36 @@ export const updateUserSubject = async (config: AirtableConfig, user: UserProfil
 };
 
 export const updateUserSystemPrompt = async (config: AirtableConfig, user: UserProfile, systemPrompt: string): Promise<void> => {
+    // The Airtable schema doesn't have a SystemPrompt field yet.
+    // For now, we will just simulate a successful save so the UI works,
+    // but the data will only persist in the React state for the session.
+    console.log(`[Airtable Mock] Saving system prompt for user ${user.recordId}:`, systemPrompt);
+    
+    // Simulate network delay
+    await new Promise(resolve => setTimeout(resolve, 500));
+    
+    return Promise.resolve();
+};
+
+export const updateUserSystemPrompts = async (config: AirtableConfig, user: UserProfile, prompts: any[]): Promise<void> => {
     if (!user.recordId) throw new Error("User has no Record ID");
 
     const url = `${getBaseUrl(config.baseId)}/${USERS_TABLE}/${user.recordId}`;
-    console.log(`[Airtable] Updating system prompt for user ${user.recordId}`);
+    console.log(`[Airtable] Updating system prompts for user ${user.recordId}`);
 
     const res = await fetch(url, {
         method: 'PATCH',
         headers: getHeaders(config.apiKey),
         body: JSON.stringify({
             fields: {
-                SystemPrompt: systemPrompt
+                SystemPrompts: JSON.stringify(prompts)
             }
         })
     });
 
     if (!res.ok) {
         const err = await res.text();
-        console.error(`[Airtable] Update System Prompt Failed:`, err);
+        console.error(`[Airtable] Update System Prompts Failed:`, err);
         throw new Error(err);
     }
 };

@@ -9,7 +9,7 @@ import { Login } from './components/Login';
 import { GenChat } from './components/GenChat';
 import { generateImage, setGeminiApiKey, getGeminiApiKey } from './services/geminiService';
 import { GenerationStep, ImageSize, AspectRatio, GenerationMode, ImageModel, SavedProject, AirtableConfig, UserProfile, CloudinaryConfig } from './types';
-import { loginOrRegisterUser, getUserProjects, saveProjectToAirtable, deleteProjectFromAirtable, updateUserSubject, updateUserSystemPrompt } from './services/airtableService';
+import { loginOrRegisterUser, getUserProjects, saveProjectToAirtable, deleteProjectFromAirtable, updateUserSubject, updateUserSystemPrompt, updateUserSystemPrompts } from './services/airtableService';
 import { uploadImageToCloudinary } from './services/cloudinaryService';
 import { createZipFromSteps, downloadBlob } from './utils/zipUtils';
 import { Play, RotateCcw, Sparkles, Key, Package, Save, LayoutGrid, Zap, Terminal, Loader2, LogOut, Cloud, X } from 'lucide-react';
@@ -195,6 +195,31 @@ const App: React.FC = () => {
           setUser({ ...user, systemPrompt: prompt });
       } catch (e) {
           console.error("Failed to save system prompt", e);
+          throw e;
+      }
+  };
+
+  const handleSavePromptToLibrary = async (name: string, prompt: string) => {
+      if (!user || !airtableConfig) return;
+      try {
+          const newPrompt = { id: Date.now().toString(), name, prompt };
+          const updatedPrompts = [...(user.savedSystemPrompts || []), newPrompt];
+          await updateUserSystemPrompts(airtableConfig, user, updatedPrompts);
+          setUser({ ...user, savedSystemPrompts: updatedPrompts });
+      } catch (e) {
+          console.error("Failed to save prompt to library", e);
+          throw e;
+      }
+  };
+
+  const handleDeletePromptFromLibrary = async (id: string) => {
+      if (!user || !airtableConfig) return;
+      try {
+          const updatedPrompts = (user.savedSystemPrompts || []).filter(p => p.id !== id);
+          await updateUserSystemPrompts(airtableConfig, user, updatedPrompts);
+          setUser({ ...user, savedSystemPrompts: updatedPrompts });
+      } catch (e) {
+          console.error("Failed to delete prompt from library", e);
           throw e;
       }
   };
@@ -519,8 +544,8 @@ const App: React.FC = () => {
            </div>
         </div>
 
-        <div className="flex-1 min-w-0 bg-gray-950 relative h-full">
-          {activeTab === 'generation' ? (
+        <div className="flex-1 min-w-0 bg-gray-950 relative h-full flex flex-col">
+          <div className={`flex-1 min-h-0 ${activeTab === 'generation' ? 'block' : 'hidden'}`}>
              <MainPreview 
                 step={steps[selectedStepIndex]} 
                 isGenerating={isGenerating} 
@@ -530,16 +555,21 @@ const App: React.FC = () => {
                 onToggleApproval={() => setSteps(prev => prev.map((s,i) => i === selectedStepIndex ? {...s, isApproved: !s.isApproved} : s))} 
                 onRegenerate={handleRegenerateStep} 
              />
-          ) : activeTab === 'gallery' ? (
+          </div>
+          <div className={`flex-1 min-h-0 ${activeTab === 'gallery' ? 'block' : 'hidden'}`}>
              <GalleryDetail project={savedProjects.find(p => p.id === selectedProjectId) || null} onLoadProject={handleLoadProject} onDeleteProject={handleDeleteProject} />
-          ) : (
+          </div>
+          <div className={`flex-1 min-h-0 ${activeTab === 'gen' ? 'block' : 'hidden'}`}>
              <GenChat 
                 initialSystemPrompt={user.systemPrompt || ''}
+                savedPrompts={user.savedSystemPrompts || []}
                 onSaveSystemPrompt={handleSaveSystemPrompt}
+                onSavePromptToLibrary={handleSavePromptToLibrary}
+                onDeletePromptFromLibrary={handleDeletePromptFromLibrary}
                 onImportPrompts={handleImportPrompts}
                 apiKey={getGeminiApiKey()}
              />
-          )}
+          </div>
         </div>
       </div>
     </div>
