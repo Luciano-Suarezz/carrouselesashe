@@ -40,6 +40,7 @@ export interface UserProfile {
   username: string;
   recordId?: string; // Airtable Record ID
   subjectImageBase64?: string | null; // This might be a URL now if using Cloudinary
+  systemPrompt?: string;
 }
 
 export interface AirtableConfig {

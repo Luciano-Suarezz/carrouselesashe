@@ -56,7 +56,8 @@ export const loginOrRegisterUser = async (config: AirtableConfig, username: stri
         return {
             username: record.fields.Name,
             recordId: record.id,
-            subjectImageBase64: record.fields.SubjectImage || null
+            subjectImageBase64: record.fields.SubjectImage || null,
+            systemPrompt: record.fields.SystemPrompt || ''
         };
     } else {
         // Create user
@@ -69,7 +70,8 @@ export const loginOrRegisterUser = async (config: AirtableConfig, username: stri
             body: JSON.stringify({
                 fields: {
                     Name: username,
-                    SubjectImage: ''
+                    SubjectImage: '',
+                    SystemPrompt: ''
                 }
             })
         });
@@ -85,7 +87,8 @@ export const loginOrRegisterUser = async (config: AirtableConfig, username: stri
         return {
             username: createData.fields.Name,
             recordId: createData.id,
-            subjectImageBase64: null
+            subjectImageBase64: null,
+            systemPrompt: ''
         };
     }
 };
@@ -116,6 +119,29 @@ export const updateUserSubject = async (config: AirtableConfig, user: UserProfil
     if (!res.ok) {
         const err = await res.text();
         console.error(`[Airtable] Update Subject Failed:`, err);
+        throw new Error(err);
+    }
+};
+
+export const updateUserSystemPrompt = async (config: AirtableConfig, user: UserProfile, systemPrompt: string): Promise<void> => {
+    if (!user.recordId) throw new Error("User has no Record ID");
+
+    const url = `${getBaseUrl(config.baseId)}/${USERS_TABLE}/${user.recordId}`;
+    console.log(`[Airtable] Updating system prompt for user ${user.recordId}`);
+
+    const res = await fetch(url, {
+        method: 'PATCH',
+        headers: getHeaders(config.apiKey),
+        body: JSON.stringify({
+            fields: {
+                SystemPrompt: systemPrompt
+            }
+        })
+    });
+
+    if (!res.ok) {
+        const err = await res.text();
+        console.error(`[Airtable] Update System Prompt Failed:`, err);
         throw new Error(err);
     }
 };

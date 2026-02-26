@@ -11,8 +11,7 @@ export const setGeminiApiKey = (key: string) => {
     sessionApiKey = key;
 };
 
-// Helper to get the key. Strictly enforces session key presence.
-const getApiKey = () => {
+export const getGeminiApiKey = () => {
     if (!sessionApiKey) {
         throw new Error("API Key is missing. Please log in with a valid Gemini API Key.");
     }
@@ -71,7 +70,7 @@ export const generateImage = async ({
   subjectImageBase64
 }: GenerateImageOptions): Promise<string> => {
   try {
-    const ai = new GoogleGenAI({ apiKey: getApiKey() });
+    const ai = new GoogleGenAI({ apiKey: getGeminiApiKey() });
     const parts: any[] = [];
     
     // 1. Handle Subject Image (Reference)
@@ -150,7 +149,7 @@ export const generateImage = async ({
  */
 export const refinePrompt = async (simplePrompt: string): Promise<string> => {
   try {
-    const ai = new GoogleGenAI({ apiKey: getApiKey() });
+    const ai = new GoogleGenAI({ apiKey: getGeminiApiKey() });
     const response = await ai.models.generateContent({
       model: TEXT_MODEL_NAME,
       contents: `Improve this image generation prompt to be professional, detailed, and visually stunning. Keep it in the same language as input. Only return the improved prompt text, no intro or outro: "${simplePrompt}"`,
@@ -171,7 +170,7 @@ export const refinePrompt = async (simplePrompt: string): Promise<string> => {
  */
 export const generateCreativeIdea = async (topic: string, systemInstruction: string): Promise<string> => {
     try {
-        const ai = new GoogleGenAI({ apiKey: getApiKey() });
+        const ai = new GoogleGenAI({ apiKey: getGeminiApiKey() });
         const response = await ai.models.generateContent({
             model: TEXT_MODEL_NAME,
             contents: topic,
@@ -188,7 +187,7 @@ export const generateCreativeIdea = async (topic: string, systemInstruction: str
 
 export const generateSlidePrompts = async (topic: string, systemInstruction?: string): Promise<string[]> => {
     try {
-        const ai = new GoogleGenAI({ apiKey: getApiKey() });
+        const ai = new GoogleGenAI({ apiKey: getGeminiApiKey() });
         const response = await ai.models.generateContent({
             model: TEXT_MODEL_NAME,
             contents: topic,
@@ -205,5 +204,42 @@ export const generateSlidePrompts = async (topic: string, systemInstruction?: st
         return prompts;
     } catch (error) {
         throw new Error("Failed to generate slide prompts");
+    }
+};
+
+export const parseImportText = async (rawText: string): Promise<{ background?: string, slides: string[] }> => {
+    try {
+        const ai = new GoogleGenAI({ apiKey: getGeminiApiKey() });
+        const response = await ai.models.generateContent({
+            model: TEXT_MODEL_NAME,
+            contents: `You are an expert parser. Extract the background prompt and the slide prompts from the following text.
+Return a JSON object with this exact structure:
+{
+  "background": "The background prompt text here, if any. Otherwise null.",
+  "slides": [
+    "Combined Visual Idea and Nano Banana Prompt for slide 1",
+    "Combined Visual Idea and Nano Banana Prompt for slide 2"
+  ]
+}
+
+For each slide, combine the 'Visual Idea' and the 'Nano Banana (Gemini) Prompt' into a single string exactly as they appear in the text, keeping the labels. For example:
+Visual Idea (ENG): [text]
+Nano Banana (Gemini) Prompt (ES):
+[text]
+
+Here is the raw text to parse:
+${rawText}`,
+            config: {
+                responseMimeType: "application/json",
+            }
+        });
+        const json = JSON.parse(response.text);
+        return {
+            background: json.background || undefined,
+            slides: json.slides || []
+        };
+    } catch (error) {
+        console.error("Parse import error:", error);
+        throw new Error("Failed to parse the imported text.");
     }
 };

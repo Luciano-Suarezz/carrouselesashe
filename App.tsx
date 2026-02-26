@@ -6,9 +6,10 @@ import { Settings } from './components/Settings';
 import { GalleryList } from './components/GalleryList';
 import { GalleryDetail } from './components/GalleryDetail';
 import { Login } from './components/Login';
-import { generateImage, setGeminiApiKey } from './services/geminiService';
+import { GenChat } from './components/GenChat';
+import { generateImage, setGeminiApiKey, getGeminiApiKey } from './services/geminiService';
 import { GenerationStep, ImageSize, AspectRatio, GenerationMode, ImageModel, SavedProject, AirtableConfig, UserProfile, CloudinaryConfig } from './types';
-import { loginOrRegisterUser, getUserProjects, saveProjectToAirtable, deleteProjectFromAirtable, updateUserSubject } from './services/airtableService';
+import { loginOrRegisterUser, getUserProjects, saveProjectToAirtable, deleteProjectFromAirtable, updateUserSubject, updateUserSystemPrompt } from './services/airtableService';
 import { uploadImageToCloudinary } from './services/cloudinaryService';
 import { createZipFromSteps, downloadBlob } from './utils/zipUtils';
 import { Play, RotateCcw, Sparkles, Key, Package, Save, LayoutGrid, Zap, Terminal, Loader2, LogOut, Cloud, X } from 'lucide-react';
@@ -47,7 +48,7 @@ const App: React.FC = () => {
   const [hasApiKey, setHasApiKey] = useState(true);
   const [isZipping, setIsZipping] = useState(false);
   const [projectName, setProjectName] = useState('');
-  const [activeTab, setActiveTab] = useState<'generation' | 'gallery'>('generation');
+  const [activeTab, setActiveTab] = useState<'generation' | 'gallery' | 'gen'>('generation');
   const [savedProjects, setSavedProjects] = useState<SavedProject[]>([]);
   const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null);
 
@@ -184,6 +185,46 @@ const App: React.FC = () => {
           console.error("Failed to save subject", e);
           alert("Failed to upload subject image.");
           throw e;
+      }
+  };
+
+  const handleSaveSystemPrompt = async (prompt: string) => {
+      if (!user || !airtableConfig) return;
+      try {
+          await updateUserSystemPrompt(airtableConfig, user, prompt);
+          setUser({ ...user, systemPrompt: prompt });
+      } catch (e) {
+          console.error("Failed to save system prompt", e);
+          throw e;
+      }
+  };
+
+  const handleImportPrompts = (background: string | undefined, slidePrompts: string[]) => {
+      const newSteps: GenerationStep[] = [];
+      
+      if (background) {
+          setGenerationMode('carousel');
+          newSteps.push({
+              id: Date.now().toString() + Math.random().toString(36).substr(2, 9),
+              prompt: background,
+              status: 'idle',
+              useSubject: false
+          });
+      }
+      
+      slidePrompts.forEach((slidePrompt, index) => {
+          newSteps.push({
+              id: Date.now().toString() + Math.random().toString(36).substr(2, 9) + index,
+              prompt: slidePrompt,
+              status: 'idle',
+              useSubject: false
+          });
+      });
+      
+      if (newSteps.length > 0) {
+          setSteps(newSteps);
+          setSelectedStepIndex(0);
+          setActiveTab('generation');
       }
   };
 
@@ -426,6 +467,9 @@ const App: React.FC = () => {
                 <button onClick={() => setActiveTab('generation')} className={`flex-1 py-3 text-xs font-bold uppercase tracking-wider transition-all border-b-2 ${activeTab === 'generation' ? 'border-primary-500 text-white bg-gray-900' : 'border-transparent text-gray-500 hover:text-gray-300 hover:bg-gray-900/50'}`}>
                     Editor
                 </button>
+                <button onClick={() => setActiveTab('gen')} className={`flex-1 py-3 text-xs font-bold uppercase tracking-wider transition-all border-b-2 ${activeTab === 'gen' ? 'border-primary-500 text-white bg-gray-900' : 'border-transparent text-gray-500 hover:text-gray-300 hover:bg-gray-900/50'}`}>
+                    Gen
+                </button>
                 <button onClick={() => setActiveTab('gallery')} className={`flex-1 py-3 text-xs font-bold uppercase tracking-wider transition-all border-b-2 ${activeTab === 'gallery' ? 'border-primary-500 text-white bg-gray-900' : 'border-transparent text-gray-500 hover:text-gray-300 hover:bg-gray-900/50'}`}>
                     Gallery
                 </button>
@@ -464,8 +508,13 @@ const App: React.FC = () => {
                             />
                         </div>
                    </>
-               ) : (
+               ) : activeTab === 'gallery' ? (
                    <GalleryList projects={savedProjects} selectedProjectId={selectedProjectId} onSelectProject={setSelectedProjectId} />
+               ) : (
+                   <div className="p-6 flex flex-col items-center justify-center h-full text-center text-gray-500 opacity-60">
+                       <Sparkles className="w-12 h-12 mb-4" />
+                       <p className="text-sm">Chat with the AI to brainstorm and generate your carousel slides.</p>
+                   </div>
                )}
            </div>
         </div>
@@ -481,8 +530,15 @@ const App: React.FC = () => {
                 onToggleApproval={() => setSteps(prev => prev.map((s,i) => i === selectedStepIndex ? {...s, isApproved: !s.isApproved} : s))} 
                 onRegenerate={handleRegenerateStep} 
              />
-          ) : (
+          ) : activeTab === 'gallery' ? (
              <GalleryDetail project={savedProjects.find(p => p.id === selectedProjectId) || null} onLoadProject={handleLoadProject} onDeleteProject={handleDeleteProject} />
+          ) : (
+             <GenChat 
+                initialSystemPrompt={user.systemPrompt || ''}
+                onSaveSystemPrompt={handleSaveSystemPrompt}
+                onImportPrompts={handleImportPrompts}
+                apiKey={getGeminiApiKey()}
+             />
           )}
         </div>
       </div>
