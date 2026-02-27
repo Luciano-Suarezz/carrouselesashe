@@ -47,6 +47,7 @@ export interface UserProfile {
   recordId?: string; // Airtable Record ID
   subjectImageBase64?: string | null; // This might be a URL now if using Cloudinary
   systemPrompt?: string;
+  ideasSystemPrompt?: string;
   savedSystemPrompts?: SavedSystemPrompt[];
 }
 

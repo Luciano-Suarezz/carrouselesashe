@@ -67,6 +67,7 @@ export const loginOrRegisterUser = async (config: AirtableConfig, username: stri
             recordId: record.id,
             subjectImageBase64: record.fields.SubjectImage || null,
             systemPrompt: record.fields.SystemPrompt || '',
+            ideasSystemPrompt: record.fields.IdeasSystemPrompt || '',
             savedSystemPrompts: savedPrompts
         };
     } else {
@@ -82,6 +83,7 @@ export const loginOrRegisterUser = async (config: AirtableConfig, username: stri
                     Name: username,
                     SubjectImage: '',
                     SystemPrompt: '',
+                    IdeasSystemPrompt: '',
                     SystemPrompts: '[]'
                 }
             })
@@ -100,6 +102,7 @@ export const loginOrRegisterUser = async (config: AirtableConfig, username: stri
             recordId: createData.id,
             subjectImageBase64: null,
             systemPrompt: '',
+            ideasSystemPrompt: '',
             savedSystemPrompts: []
         };
     }
@@ -154,6 +157,29 @@ export const updateUserSystemPrompt = async (config: AirtableConfig, user: UserP
     if (!res.ok) {
         const err = await res.text();
         console.error(`[Airtable] Update System Prompt Failed:`, err);
+        throw new Error(err);
+    }
+};
+
+export const updateUserIdeasSystemPrompt = async (config: AirtableConfig, user: UserProfile, prompt: string): Promise<void> => {
+    if (!user.recordId) throw new Error("User has no Record ID");
+
+    const url = `${getBaseUrl(config.baseId)}/${USERS_TABLE}/${user.recordId}`;
+    console.log(`[Airtable] Updating ideas system prompt for user ${user.recordId}`);
+
+    const res = await fetch(url, {
+        method: 'PATCH',
+        headers: getHeaders(config.apiKey),
+        body: JSON.stringify({
+            fields: {
+                IdeasSystemPrompt: prompt
+            }
+        })
+    });
+
+    if (!res.ok) {
+        const err = await res.text();
+        console.error(`[Airtable] Update Ideas System Prompt Failed:`, err);
         throw new Error(err);
     }
 };

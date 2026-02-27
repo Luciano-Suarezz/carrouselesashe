@@ -7,9 +7,10 @@ import { GalleryList } from './components/GalleryList';
 import { GalleryDetail } from './components/GalleryDetail';
 import { Login } from './components/Login';
 import { GenChat } from './components/GenChat';
+import { IdeasChat } from './components/IdeasChat';
 import { generateImage, setGeminiApiKey, getGeminiApiKey } from './services/geminiService';
 import { GenerationStep, ImageSize, AspectRatio, GenerationMode, ImageModel, SavedProject, AirtableConfig, UserProfile, CloudinaryConfig } from './types';
-import { loginOrRegisterUser, getUserProjects, saveProjectToAirtable, deleteProjectFromAirtable, updateUserSubject, updateUserSystemPrompt, updateUserSystemPrompts } from './services/airtableService';
+import { loginOrRegisterUser, getUserProjects, saveProjectToAirtable, deleteProjectFromAirtable, updateUserSubject, updateUserSystemPrompt, updateUserIdeasSystemPrompt, updateUserSystemPrompts } from './services/airtableService';
 import { uploadImageToCloudinary } from './services/cloudinaryService';
 import { createZipFromSteps, downloadBlob } from './utils/zipUtils';
 import { Play, RotateCcw, Sparkles, Key, Package, Save, LayoutGrid, Zap, Terminal, Loader2, LogOut, Cloud, X } from 'lucide-react';
@@ -49,6 +50,7 @@ const App: React.FC = () => {
   const [isZipping, setIsZipping] = useState(false);
   const [projectName, setProjectName] = useState('');
   const [activeTab, setActiveTab] = useState<'generation' | 'gallery' | 'gen'>('generation');
+  const [genSubTab, setGenSubTab] = useState<'slides' | 'ideas'>('slides');
   const [savedProjects, setSavedProjects] = useState<SavedProject[]>([]);
   const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null);
 
@@ -195,6 +197,17 @@ const App: React.FC = () => {
           setUser({ ...user, systemPrompt: prompt });
       } catch (e) {
           console.error("Failed to save system prompt", e);
+          throw e;
+      }
+  };
+
+  const handleSaveIdeasSystemPrompt = async (prompt: string) => {
+      if (!user || !airtableConfig) return;
+      try {
+          await updateUserIdeasSystemPrompt(airtableConfig, user, prompt);
+          setUser({ ...user, ideasSystemPrompt: prompt });
+      } catch (e) {
+          console.error("Failed to save ideas system prompt", e);
           throw e;
       }
   };
@@ -435,6 +448,8 @@ const App: React.FC = () => {
       return <Login onLogin={handleLogin} />;
   }
 
+  const isLucho = user?.username.toLowerCase() === 'lucho';
+
   return (
     <div className="flex h-full flex-col bg-gray-950 text-gray-100 font-sans relative">
       <header className="flex-none h-14 border-b border-gray-800 bg-gray-950 flex items-center justify-between px-4 z-20 select-none">
@@ -559,16 +574,39 @@ const App: React.FC = () => {
           <div className={`flex-1 min-h-0 ${activeTab === 'gallery' ? 'block' : 'hidden'}`}>
              <GalleryDetail project={savedProjects.find(p => p.id === selectedProjectId) || null} onLoadProject={handleLoadProject} onDeleteProject={handleDeleteProject} />
           </div>
-          <div className={`flex-1 min-h-0 ${activeTab === 'gen' ? 'block' : 'hidden'}`}>
-             <GenChat 
-                initialSystemPrompt={user.systemPrompt || ''}
-                savedPrompts={user.savedSystemPrompts || []}
-                onSaveSystemPrompt={handleSaveSystemPrompt}
-                onSavePromptToLibrary={handleSavePromptToLibrary}
-                onDeletePromptFromLibrary={handleDeletePromptFromLibrary}
-                onImportPrompts={handleImportPrompts}
-                apiKey={getGeminiApiKey()}
-             />
+          <div className={`flex-1 min-h-0 flex flex-col ${activeTab === 'gen' ? 'block' : 'hidden'}`}>
+             {isLucho && (
+               <div className="flex-none flex border-b border-gray-800 bg-gray-950">
+                 <button onClick={() => setGenSubTab('slides')} className={`px-6 py-3 text-xs font-bold uppercase tracking-wider transition-all border-b-2 ${genSubTab === 'slides' ? 'border-primary-500 text-white bg-gray-900' : 'border-transparent text-gray-500 hover:text-gray-300 hover:bg-gray-900/50'}`}>
+                   Slides
+                 </button>
+                 <button onClick={() => setGenSubTab('ideas')} className={`px-6 py-3 text-xs font-bold uppercase tracking-wider transition-all border-b-2 ${genSubTab === 'ideas' ? 'border-primary-500 text-white bg-gray-900' : 'border-transparent text-gray-500 hover:text-gray-300 hover:bg-gray-900/50'}`}>
+                   Ideas
+                 </button>
+               </div>
+             )}
+             
+             <div className={`flex-1 min-h-0 ${!isLucho || genSubTab === 'slides' ? 'block' : 'hidden'}`}>
+                 <GenChat 
+                    initialSystemPrompt={user.systemPrompt || ''}
+                    savedPrompts={user.savedSystemPrompts || []}
+                    onSaveSystemPrompt={handleSaveSystemPrompt}
+                    onSavePromptToLibrary={handleSavePromptToLibrary}
+                    onDeletePromptFromLibrary={handleDeletePromptFromLibrary}
+                    onImportPrompts={handleImportPrompts}
+                    apiKey={getGeminiApiKey()}
+                 />
+             </div>
+
+             {isLucho && (
+                 <div className={`flex-1 min-h-0 ${genSubTab === 'ideas' ? 'block' : 'hidden'}`}>
+                     <IdeasChat 
+                        initialSystemPrompt={user.ideasSystemPrompt || ''}
+                        onSaveSystemPrompt={handleSaveIdeasSystemPrompt}
+                        apiKey={getGeminiApiKey()}
+                     />
+                 </div>
+             )}
           </div>
         </div>
       </div>
