@@ -16,16 +16,31 @@ export const createZipFromSteps = async (
   
   let addedCount = 0;
 
-  stepsToExport.forEach((step, index) => {
+  for (let index = 0; index < stepsToExport.length; index++) {
+      const step = stepsToExport[index];
       if (step.status === 'completed' && step.imageUrl && step.isApproved) {
-          // Image URL is "data:image/png;base64,..."
-          const base64Data = step.imageUrl.split(',')[1];
-          // Adjust index for filename to be 1-based relative to the export set
           const fileName = `slide-${index + 1}.png`;
-          zip.file(fileName, base64Data, {base64: true});
-          addedCount++;
+          
+          if (step.imageUrl.startsWith('data:')) {
+              // Image URL is "data:image/png;base64,..."
+              const base64Data = step.imageUrl.split(',')[1];
+              zip.file(fileName, base64Data, {base64: true});
+              addedCount++;
+          } else if (step.imageUrl.startsWith('http')) {
+              try {
+                  const response = await fetch(step.imageUrl, { mode: 'cors' });
+                  if (!response.ok) {
+                      throw new Error(`HTTP error! status: ${response.status}`);
+                  }
+                  const arrayBuffer = await response.arrayBuffer();
+                  zip.file(fileName, arrayBuffer);
+                  addedCount++;
+              } catch (error) {
+                  console.error(`Failed to fetch image for zip: ${step.imageUrl}`, error);
+              }
+          }
       }
-  });
+  }
 
   if (addedCount === 0) {
       return null;
